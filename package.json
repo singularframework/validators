@@ -1,0 +1,39 @@
+{
+  "name": "@singular/validators",
+  "version": "1.0.0-alpha1",
+  "description": "Singular framework validators module.",
+  "main": "dist/validators.js",
+  "scripts": {
+    "start": "./node_modules/typescript/bin/tsc --build",
+    "docs": "./node_modules/typedoc/bin/typedoc --out docs src",
+    "test": "./node_modules/typescript/bin/tsc -p test/tsconfig.json && ./node_modules/mocha/bin/mocha ./test/dist/main.spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/singularframework/validators.git"
+  },
+  "keywords": [
+    "singular",
+    "backend",
+    "framework",
+    "express",
+    "nodejs",
+    "node",
+    "typescript",
+    "validation",
+    "validators"
+  ],
+  "author": "Ramtin Soltani <ramtin@chiselpowered.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/singularframework/validators/issues"
+  },
+  "homepage": "https://github.com/singularframework/validators#readme",
+  "devDependencies": {
+    "@types/mocha": "^8.0.3",
+    "@types/node": "^14.6.0",
+    "mocha": "^8.1.2",
+    "typedoc": "^0.18.0",
+    "typescript": "^4.0.2"
+  }
+}
