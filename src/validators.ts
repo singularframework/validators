@@ -7,6 +7,7 @@ export class Validators {
     private __validators: Array<ValidatorFunction|AsyncValidatorFunction> = [],
     private __lengthAsValue: boolean = false,
     private __negate: boolean = false,
+    private __negateNext: boolean = false,
     private __optional: boolean = false,
     private __refAsValue: string = null,
     private __conditions: Array<ValidatorFunction|AsyncValidatorFunction> = []
@@ -19,6 +20,7 @@ export class Validators {
 
     if ( this.__lengthAsValue ) wrapped = validators.length(wrapped);
     if ( this.__negate ) wrapped = validators.not(wrapped);
+    if ( this.__negateNext ) wrapped = validators.not(wrapped);
 
     return wrapped;
 
@@ -31,6 +33,7 @@ export class Validators {
       this.__validators.concat(this.__wrapIfNecessary(validator)),
       this.__lengthAsValue,
       this.__negate,
+      false,
       this.__optional,
       this.__refAsValue,
       this.__conditions
@@ -146,6 +149,21 @@ export class Validators {
 
   // Mutators
 
+  /** Negates the next validator. */
+  public get non() {
+
+    return new Validators(
+      this.__validators,
+      this.__lengthAsValue,
+      this.__negate,
+      true,
+      this.__optional,
+      this.__refAsValue,
+      this.__conditions
+    );
+
+  }
+
   /** Negates all validators from this point forward. */
   public get not() {
 
@@ -153,6 +171,7 @@ export class Validators {
       this.__validators,
       this.__lengthAsValue,
       true,
+      this.__negateNext,
       this.__optional,
       this.__refAsValue,
       this.__conditions
@@ -167,6 +186,7 @@ export class Validators {
       this.__validators,
       true,
       this.__negate,
+      this.__negateNext,
       this.__optional,
       this.__refAsValue,
       this.__conditions
@@ -354,6 +374,6 @@ export const where = new Validators();
 /** Aesthetic property. */
 export const does = new Validators();
 /** Optional validation which ignores validation rules when value is undefined. */
-export const could = new Validators([], false, false, true);
+export const could = new Validators([], false, false, false, true);
 /** Returns validators for the value resolved from a path. */
-export function $(ref: string) { return new Validators([], false, false, false, ref); }
+export function $(ref: string) { return new Validators([], false, false, false, false, ref); }
