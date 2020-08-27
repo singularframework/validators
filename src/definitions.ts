@@ -24,22 +24,27 @@ const validators = {
 
     return <AsyncValidatorFunction>((value, rawValues) => {
 
-      try {
-
-        value.length;
-
-      }
-      catch (error) {
-
-        return false;
-
-      }
-
       return validator(value.length, rawValues);
 
     });
 
   },
+  hasLength: <ValidatorFunction>(value => {
+
+    try {
+
+      value.length;
+
+      return true;
+
+    }
+    catch (error) {
+
+      return false;
+
+    }
+
+  }),
   undefined: <ValidatorFunction>(value => value === undefined),
   null: <ValidatorFunction>(value => value === null),
   NaN: <ValidatorFunction>(value => isNaN(value)),

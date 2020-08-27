@@ -16,7 +16,7 @@ export class Validators {
     private __errorMessage: string = null
   ) { }
 
-  /** Wraps a validator if necessary based on this.__negate and this.__lengthAsValue. */
+  /** Wraps a validator if necessary based on this.__negate, this.__negateNext, and this.__lengthAsValue. */
   private __wrapIfNecessary(validator: ValidatorFunction|AsyncValidatorFunction): ValidatorFunction|AsyncValidatorFunction {
 
     let wrapped = validator;
@@ -216,7 +216,7 @@ export class Validators {
   public get length() {
 
     return new Validators(
-      this.__validators,
+      this.__validators.concat(validators.hasLength),
       true,
       this.__negate,
       this.__negateNext,
