@@ -215,6 +215,7 @@ describe('Validators', function() {
     const body3 = { reason: 'bug-report', explanation: true };
     const body4 = { reason: 'other', explanation: true };
 
+    // Should be a non-empty string when "reason" is "other", otherwise should be undefined
     validator = should.be.a.non.empty.string.onlyWhen(
       $('reason').does.equal(Reason.Other).otherwise(errorMessage2)
     ).otherwise(errorMessage).__exec();
@@ -224,6 +225,401 @@ describe('Validators', function() {
     expect(await validator(body3.explanation, body3)).to.have.property('message', errorMessage2);
     expect(await validator(body4.explanation, body4)).to.have.property('message', errorMessage);
 
-  })
+  });
+
+  it('should validate undefined correctly', async function() {
+
+    let validator = should.be.undefined.__exec();
+
+    expect(await validator(undefined)).to.be.true;
+    expect(await validator(null)).to.be.false;
+    expect(await validator('')).to.be.false;
+    expect(await validator(123)).to.be.false;
+
+  });
+
+  it('should validate null correctly', async function() {
+
+    let validator = should.be.null.__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.true;
+    expect(await validator('')).to.be.false;
+    expect(await validator({})).to.be.false;
+
+  });
+
+  it('should validate NaN correctly', async function() {
+
+    let validator = should.be.NaN.__exec();
+
+    expect(await validator(NaN)).to.be.equal(isNaN(NaN));
+    expect(await validator(null)).to.be.equal(isNaN(null));
+    expect(await validator(0)).to.be.equal(isNaN(0));
+    expect(await validator(123)).to.be.equal(isNaN(123));
+    expect(await validator(-2)).to.be.equal(isNaN(-2));
+    expect(await validator({})).to.be.equal(isNaN(<any>{}));
+    expect(await validator([])).to.be.equal(isNaN(<any>[]));
+    expect(await validator(parseInt('blah'))).to.be.equal(isNaN(parseInt('blah')));
+
+  });
+
+  it('should validate true correctly', async function() {
+
+    let validator = should.be.true.__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(true)).to.be.true;
+    expect(await validator('')).to.be.false;
+    expect(await validator(false)).to.be.false;
+    expect(await validator(123)).to.be.false;
+    expect(await validator(123 % 2 === 1)).to.be.true;
+
+  });
+
+  it('should validate false correctly', async function() {
+
+    let validator = should.be.false.__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator('')).to.be.false;
+    expect(await validator(false)).to.be.true;
+    expect(await validator(<unknown>123 === 0)).to.be.true;
+
+  });
+
+  it('should validate truthy values correctly', async function() {
+
+    let validator = should.be.truthy.__exec();
+
+    expect(await validator(true)).to.be.true;
+    expect(await validator('some string')).to.be.true;
+    expect(await validator('')).to.be.false;
+    expect(await validator(false)).to.be.false;
+    expect(await validator(0)).to.be.false;
+    expect(await validator({})).to.be.true;
+    expect(await validator([])).to.be.true;
+
+  });
+
+  it('should validate falsey values correctly', async function() {
+
+    let validator = should.be.falsey.__exec();
+
+    expect(await validator(true)).to.be.false;
+    expect(await validator('some string')).to.be.false;
+    expect(await validator('')).to.be.true;
+    expect(await validator(false)).to.be.true;
+    expect(await validator(0)).to.be.true;
+    expect(await validator({})).to.be.false;
+    expect(await validator([])).to.be.false;
+
+  });
+
+  it('should validate number ranges correctly', async function() {
+
+    let validator = should.be.gt(0).__exec();
+
+    expect(await validator(0)).to.be.false;
+    expect(await validator(-1)).to.be.false;
+    expect(await validator(.5)).to.be.true;
+
+    validator = should.be.gte(0).__exec();
+
+    expect(await validator(0)).to.be.true;
+    expect(await validator(-1)).to.be.false;
+    expect(await validator(.5)).to.be.true;
+
+    validator = should.be.lt(100).__exec();
+
+    expect(await validator(100)).to.be.false;
+    expect(await validator(99)).to.be.true;
+    expect(await validator(-1)).to.be.true;
+
+    validator = should.be.lte(100).__exec();
+
+    expect(await validator(100)).to.be.true;
+    expect(await validator(101)).to.be.false;
+    expect(await validator(-1)).to.be.true;
+
+    validator = should.be.between(0, 100).__exec();
+
+    expect(await validator(100)).to.be.true;
+    expect(await validator(0)).to.be.true;
+    expect(await validator(50)).to.be.true;
+    expect(await validator(200)).to.be.false;
+    expect(await validator(-1)).to.be.false;
+
+    validator = should.be.betweenEx(0, 100).__exec();
+
+    expect(await validator(100)).to.be.false;
+    expect(await validator(0)).to.be.false;
+    expect(await validator(50)).to.be.true;
+    expect(await validator(200)).to.be.false;
+    expect(await validator(-1)).to.be.false;
+
+    validator = should.be.positive.__exec();
+
+    expect(await validator(1)).to.be.true;
+    expect(await validator(0)).to.be.false;
+    expect(await validator(-1)).to.be.false;
+
+    validator = should.be.negative.__exec();
+
+    expect(await validator(1)).to.be.false;
+    expect(await validator(0)).to.be.false;
+    expect(await validator(-1)).to.be.true;
+
+  });
+
+  it('should validate number ranges from reference correctly', async function() {
+
+    const body = {
+      num1: 0,
+      num2: 100
+    };
+    let validator = should.be.gtRef('num1').__exec();
+
+    expect(await validator(0, body)).to.be.false;
+    expect(await validator(-1, body)).to.be.false;
+    expect(await validator(.5, body)).to.be.true;
+
+    validator = should.be.gteRef('num1').__exec();
+
+    expect(await validator(0, body)).to.be.true;
+    expect(await validator(-1, body)).to.be.false;
+    expect(await validator(.5, body)).to.be.true;
+
+    validator = should.be.ltRef('num2').__exec();
+
+    expect(await validator(100, body)).to.be.false;
+    expect(await validator(99, body)).to.be.true;
+    expect(await validator(-1, body)).to.be.true;
+
+    validator = should.be.lteRef('num2').__exec();
+
+    expect(await validator(100, body)).to.be.true;
+    expect(await validator(101, body)).to.be.false;
+    expect(await validator(-1, body)).to.be.true;
+
+  });
+
+  it('should validate number types correctly', async function() {
+
+    let validator = should.be.zero.__exec();
+
+    expect(await validator(0)).to.be.true;
+    expect(await validator('0')).to.be.true;
+    expect(await validator('')).to.be.true;
+    expect(await validator('abc')).to.be.false;
+    expect(await validator(1)).to.be.false;
+
+    validator = should.be.even.__exec();
+
+    expect(await validator(0)).to.be.true;
+    expect(await validator('12')).to.be.true;
+    expect(await validator('')).to.be.true;
+    expect(await validator('abc')).to.be.false;
+    expect(await validator(1)).to.be.false;
+    expect(await validator(139)).to.be.false;
+
+    validator = should.be.odd.__exec();
+
+    expect(await validator(0)).to.be.false;
+    expect(await validator('12')).to.be.false;
+    expect(await validator('')).to.be.false;
+    expect(await validator('abc')).to.be.false;
+    expect(await validator(1)).to.be.true;
+    expect(await validator(139)).to.be.true;
+
+  });
+
+  it('should validate emails correctly', async function() {
+
+    let validator = should.be.an.email.__exec();
+
+    expect(await validator('username@gmail.com')).to.be.true;
+    expect(await validator('username_1990@gmail12-c.work')).to.be.true;
+    expect(await validator('user.name@sub.gmail.com')).to.be.true;
+    expect(await validator('email.com')).to.be.false;
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator('')).to.be.false;
+    expect(await validator('username+tag@gmail.com')).to.be.true;
+    expect(await validator('username!!!@gmail.com')).to.be.false;
+
+  });
+
+  it('should validate using "equal" and "equalRef" correctly', async function() {
+
+    const body = {
+      name: {
+        first: 'Steve',
+        last: 'Gates'
+      },
+      fullName: 'Bill Jobs'
+    };
+
+    let validator = should.be.equal('value').__exec();
+
+    expect(await validator('value')).to.be.true;
+    expect(await validator('value ')).to.be.false;
+    expect(await validator(undefined)).to.be.false;
+
+    validator = should.be.equalRef('name.first').__exec();
+
+    expect(await validator('Steve', body)).to.be.true;
+    expect(await validator('Bill', body)).to.be.false;
+
+    validator = should.be.equalRef('name.last').__exec();
+
+    expect(await validator('Gates', body)).to.be.true;
+    expect(await validator('Jobs', body)).to.be.false;
+
+    validator = should.be.equalRef('fullName').__exec();
+
+    expect(await validator('Bill Jobs', body)).to.be.true;
+    expect(await validator('bill jobs', body)).to.be.false;
+
+  });
+
+  it('should validate using "exist" correctly', async function() {
+
+    let validator = should.exist.__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.true;
+    expect(await validator('string')).to.be.true;
+    expect(await validator(0)).to.be.true;
+    expect(await validator(NaN)).to.be.true;
+
+  });
+
+  it('should match strings correctly', async function() {
+
+    let validator = should.match(/(?<=^https:\/\/).+\..+$/i).__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator('string')).to.be.false;
+    expect(await validator(0)).to.be.false;
+    expect(await validator(NaN)).to.be.false;
+    expect(await validator('ftp://blah.com')).to.be.false;
+    expect(await validator('http://blah.net')).to.be.false;
+    expect(await validator('https://blah.com')).to.be.true;
+
+  });
+
+  it('should validate inclusions correctly', async function() {
+
+    const body = {
+      value: null,
+      collection: [1,2,3]
+    };
+
+    let validator = should.include(Infinity).__exec();
+
+    expect(await validator('Infinity')).to.be.true;
+    expect(await validator('stringfinity')).to.be.false;
+
+    validator = should.include('a').__exec();
+
+    expect(await validator('some-string')).to.be.false;
+    expect(await validator('a-string')).to.be.true;
+    expect(await validator([1, 2, 3])).to.be.false;
+
+    validator = should.includeRef('value').__exec();
+
+    expect(await validator(undefined, body)).to.be.false;
+    expect(await validator(null, body)).to.be.false;
+    expect(await validator('null', body)).to.be.true;
+    expect(await validator([null, 0, 'string'], body)).to.be.true;
+
+    validator = should.includeAll('a', 1, null).__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator('null')).to.be.false;
+    expect(await validator([null, 0, 1, 'a', 'string'])).to.be.true;
+
+    validator = should.be.in([1,2,3,'s']).__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator('null')).to.be.false;
+    expect(await validator([null, 0, 'string'])).to.be.false;
+    expect(await validator(2)).to.be.true;
+    expect(await validator('s')).to.be.true;
+
+    validator = should.be.inRef('value').__exec();
+
+    expect(await validator(null, body)).to.be.false;
+    expect(await validator(undefined, body)).to.be.false;
+    expect(await validator(0, body)).to.be.false;
+
+    validator = should.be.inRef('resolveToUndefined').__exec();
+
+    expect(await validator(null, body)).to.be.false;
+    expect(await validator(undefined, body)).to.be.false;
+    expect(await validator(0, body)).to.be.false;
+
+    validator = should.be.inRef('collection').__exec();
+
+    expect(await validator(2, body)).to.be.true;
+    expect(await validator(undefined, body)).to.be.false;
+    expect(await validator(0, body)).to.be.false;
+
+  });
+
+  it('should validate enums correctly', async function() {
+
+    enum StringEnum {
+      Value1 = 'value1',
+      Value2 = 'value2',
+    }
+
+    enum NumericEnum {
+      Value1,
+      Value2 = 3
+    }
+
+    let validator = should.belong.to.enum(StringEnum).__exec();
+
+    expect(await validator('value1')).to.be.true;
+    expect(await validator('Value1')).to.be.false;
+    expect(await validator(0)).to.be.false;
+    expect(await validator(StringEnum.Value2)).to.be.true;
+
+    validator = should.belong.to.enum(NumericEnum).__exec();
+
+    expect(await validator('value1')).to.be.false;
+    expect(await validator('Value2')).to.be.true;
+    expect(await validator(0)).to.be.true;
+    expect(await validator(NumericEnum.Value2)).to.be.true;
+    expect(await validator(2)).to.be.false;
+    expect(await validator(3)).to.be.true;
+
+    validator = should.belong.to.enum(undefined).__exec();
+
+    expect(await validator('value1')).to.be.false;
+    expect(await validator('Value1')).to.be.false;
+    expect(await validator(0)).to.be.false;
+    expect(await validator(StringEnum.Value2)).to.be.false;
+
+    validator = should.belong.to.enum(null).__exec();
+
+    expect(await validator('value1')).to.be.false;
+    expect(await validator('Value1')).to.be.false;
+    expect(await validator(0)).to.be.false;
+    expect(await validator(StringEnum.Value2)).to.be.false;
+
+    validator = should.belong.to.enum(123).__exec();
+
+    expect(await validator('value1')).to.be.false;
+    expect(await validator('Value1')).to.be.false;
+    expect(await validator(0)).to.be.false;
+    expect(await validator(StringEnum.Value2)).to.be.false;
+
+  });
 
 });

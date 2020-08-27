@@ -352,11 +352,11 @@ export class Validators {
   /** Checks if value includes all targets (using value.includes). */
   public includeAll(...targets: any[]) { return this.__addValidator(validators.includeAll(...targets)); }
   /** Checks if value is included in target (using target.includes). */
-  public in(target: any) { return this.__addValidator(validators.in(target)); }
+  public in(target: string|any[]) { return this.__addValidator(validators.in(target)); }
   /** Checks if value is included in target resolved from reference (using target.includes). */
   public inRef(ref: string) { return this.__addValidator(validators.inRef(ref)); }
   /** Checks if value belongs to enum. */
-  public enum(enumerator: any) { return this.__addValidator(validators.enum(enumerator)); }
+  public enum(enumerator: Object) { return this.__addValidator(validators.enum(enumerator)); }
   /** Checks if a valid date can be constructed using the value. */
   public get date() { return this.__addValidator(validators.date); }
   /** Checks if value is a valid IANA timezone. */

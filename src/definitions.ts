@@ -69,12 +69,12 @@ const validators = {
   even: <ValidatorFunction>(value => +value % 2 === 0),
   odd: <ValidatorFunction>(value => +value % 2 === 1),
   exist: <ValidatorFunction>(value => value !== undefined),
-  match: (regex: RegExp) => <ValidatorFunction>(value => value.match && !! value.match(regex)),
-  include: (target: any) => <ValidatorFunction>(value => value.includes && value.includes(target)),
-  includeRef: (ref: string) => <ValidatorFunction>((value, rawValues) => value.includes && value.includes(resolveRef(ref, rawValues))),
+  match: (regex: RegExp) => <ValidatorFunction>(value => typeof value === 'string' && !! value.match(regex)),
+  include: (target: any) => <ValidatorFunction>(value => (typeof value === 'string' || (!! value && typeof value === 'object' && value.constructor === Array)) && value.includes(target)),
+  includeRef: (ref: string) => <ValidatorFunction>((value, rawValues) => (typeof value === 'string' || (!! value && typeof value === 'object' && value.constructor === Array)) && value.includes(resolveRef(ref, rawValues))),
   includeAll: (...targets: any[]) => <ValidatorFunction>(value => {
 
-    if ( ! value.includes ) return false;
+    if ( typeof value !== 'string' && (! value || typeof value !== 'object' || value.constructor !== Array) ) return false;
 
     for ( const target of targets ) {
 
@@ -85,17 +85,17 @@ const validators = {
     return true;
 
   }),
-  in: (target: any) => <ValidatorFunction>(value => target.includes && target.includes(value)),
+  in: (target: any[]|string) => <ValidatorFunction>(value => target.includes(value)),
   inRef: (ref: string) => <ValidatorFunction>((value, rawValues) => {
 
     const target = resolveRef(ref, rawValues);
 
-    if ( ! target || ! target.includes ) return false;
+    if ( typeof target !== 'string' && (! target || typeof target !== 'object' || target.constructor !== Array) ) return false;
 
     return target.includes(value);
 
   }),
-  enum: (enumerator: any) => <ValidatorFunction>(value => Object.values(enumerator).includes(value)),
+  enum: (enumerator: any) => <ValidatorFunction>(value => !! enumerator && typeof enumerator === 'object' && Object.values(enumerator).includes(value)),
   date: <ValidatorFunction>(value => DateTime.fromJSDate(new Date(value)).isValid),
   timezone: <ValidatorFunction>(value => !! value && IANAZone.isValidZone(value)),
   or: (...validators: Array<ValidatorFunction|AsyncValidatorFunction>) => {
@@ -126,7 +126,7 @@ const validators = {
 
   }),
   zero: <ValidatorFunction>(value => +value === 0),
-  email: <ValidatorFunction>(value => typeof value === 'string' && !! value.match(/^[a-z0-9.\-_]+@[a-z0-9-]+\.[a-z]+$/i)),
+  email: <ValidatorFunction>(value => typeof value === 'string' && !! value.match(/^[a-z0-9.\-_+]+@[a-z0-9.\-]+\.[a-z]+$/i)),
   children: (validator: ValidationDefinition|ValidatorFunction|AsyncValidatorFunction, localRefs?: boolean) => {
 
     return async (value: any, rawValues?: any) => {
