@@ -1,3 +1,4 @@
+import 'source-map-support/register';
 import { ValidatorFunction, AsyncValidatorFunction, resolveRef, ValidationDefinition } from '@singular/core';
 import validators from './definitions';
 
@@ -240,7 +241,7 @@ export class Validators {
   /** Checks if value (casted to number) is zero. */
   public get zero() { return this.__addValidator(validators.zero); }
   /** Checks if value (casted to number) is an even number. */
-  public get event() { return this.__addValidator(validators.even); }
+  public get even() { return this.__addValidator(validators.even); }
   /** Checks if value (casted to number) is an odd number. */
   public get odd() { return this.__addValidator(validators.odd); }
   /** Checks if value (casted to string) is a valid email. */

@@ -5,8 +5,8 @@ const validators = {
   string: <ValidatorFunction>(value => typeof value === 'string'),
   boolean: <ValidatorFunction>(value => typeof value === 'boolean'),
   number: <ValidatorFunction>(value => typeof value === 'number'),
-  object: <ValidatorFunction>(value => value && typeof value === 'object' && value.constructor === Object),
-  array: <ValidatorFunction>(value => value && typeof value === 'object' && value.constructor === Array),
+  object: <ValidatorFunction>(value => !! value && typeof value === 'object' && value.constructor === Object),
+  array: <ValidatorFunction>(value => !! value && typeof value === 'object' && value.constructor === Array),
   not: (validator: ValidatorFunction|AsyncValidatorFunction) => {
 
     return <AsyncValidatorFunction>(async (value, rawValues) => {
@@ -23,6 +23,17 @@ const validators = {
   length: (validator: ValidatorFunction|AsyncValidatorFunction) => {
 
     return <AsyncValidatorFunction>((value, rawValues) => {
+
+      try {
+
+        value.length;
+
+      }
+      catch (error) {
+
+        return false;
+
+      }
 
       return validator(value.length, rawValues);
 
@@ -81,7 +92,7 @@ const validators = {
   }),
   enum: (enumerator: any) => <ValidatorFunction>(value => Object.values(enumerator).includes(value)),
   date: <ValidatorFunction>(value => DateTime.fromJSDate(new Date(value)).isValid),
-  timezone: <ValidatorFunction>(value => value && IANAZone.isValidZone(value)),
+  timezone: <ValidatorFunction>(value => !! value && IANAZone.isValidZone(value)),
   or: (...validators: Array<ValidatorFunction|AsyncValidatorFunction>) => {
 
     return async (value: any, rawValues?: any) => {
@@ -103,8 +114,8 @@ const validators = {
 
     if ( typeof value === 'string' ) return value.length === 0;
     if ( typeof value === 'number' ) return value === 0;
-    if ( value && typeof value === 'object' && value.constructor === Object ) return Object.keys(value).length === 0;
-    if ( value && typeof value === 'object' && value.constructor === Array ) return value.length === 0;
+    if ( !! value && typeof value === 'object' && value.constructor === Object ) return Object.keys(value).length === 0;
+    if ( !! value && typeof value === 'object' && value.constructor === Array ) return value.length === 0;
 
     return false;
 
@@ -116,7 +127,7 @@ const validators = {
     return async (value: any, rawValues?: any) => {
 
       // If value is of type object
-      if ( value && typeof value === 'object' ) {
+      if ( !! value && typeof value === 'object' ) {
 
         // If object
         if ( value.constructor === Object ) {

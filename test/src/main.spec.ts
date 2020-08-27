@@ -1,3 +1,4 @@
+import 'source-map-support/register';
 import { should } from '../..';
 import { expect } from 'chai';
 
@@ -52,6 +53,46 @@ describe('Validators', function() {
     expect(await validator('')).to.be.false;
     expect(await validator(123)).to.be.true;
     expect(await validator(false)).to.be.true;
+
+  });
+
+  it('should validate booleans correctly', async function() {
+
+    let validator = should.be.a.boolean.__exec();
+
+    expect(await validator(true)).to.be.true;
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator(false)).to.be.true;
+
+    validator = should.be.a.boolean.that.is.equal(false).__exec();
+
+    expect(await validator(true)).to.be.false;
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator(false)).to.be.true;
+
+  });
+
+  it('should validate numbers correctly', async function() {
+
+    let validator = should.be.a.number.__exec();
+
+    expect(await validator(-123)).to.be.true;
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator('123')).to.be.false;
+    expect(await validator(true)).to.be.false;
+
+  });
+
+  it('should validate objects correctly', async function() {
+
+    let validator = should.be.an.object.__exec();
+
+    expect(await validator([1,2,3])).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator({ a: true })).to.be.true;
+    expect(await validator(true)).to.be.false;
 
   });
 
