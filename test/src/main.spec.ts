@@ -1,5 +1,5 @@
 import 'source-map-support/register';
-import { should, that, $ } from '../..';
+import { should, could, that, is, does, $ } from '../..';
 import { expect } from 'chai';
 
 describe('Validators', function() {
@@ -724,6 +724,156 @@ describe('Validators', function() {
     expect(await validator(undefined)).to.be.false;
     expect(await validator(null)).to.be.false;
     expect(await validator(body.books)).to.be.true;
+
+  });
+
+  it('should validate using "either" correctly', async function() {
+
+    let validator = should.be.a.string.that.either(
+      is.equal('google.com'),
+      does.match(/^http(s)?:\/\/.+\.[a-z]+$/i),
+      // Validate public IP address
+      (value: string) => {
+
+        const segments = value.split('.');
+
+        if ( segments.length !== 4 ) return false;
+        if ( segments.filter(s => ! isNaN(+s)).length !== 4 ) return false;
+        if ( +segments[0] < 1 || +segments[0] > 191 ) return false;
+        if ( +segments[1] < 0 || +segments[1] > 255 ) return false;
+        if ( +segments[2] < 0 || +segments[2] > 255 ) return false;
+        if ( +segments[3] < 0 || +segments[3] > 255 ) return false;
+
+        return true;
+
+      }
+    ).__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator(123)).to.be.false;
+    expect(await validator(NaN)).to.be.false;
+    expect(await validator('google.com')).to.be.true;
+    expect(await validator('yahoo.com')).to.be.false;
+    expect(await validator('http://google.com')).to.be.true;
+    expect(await validator('https://google.com')).to.be.true;
+    expect(await validator('meh')).to.be.false;
+    expect(await validator('145.0.2.91')).to.be.true;
+
+  });
+
+  it('should validate conditionally using "when" and "onlyWhen" correctly', async function() {
+
+    const body1 = {
+      name: {
+        first: 'George',
+        last: 'Gandhi'
+      }
+    };
+
+    const body2 = {
+      fullName: 'Gandalf the Pink'
+    };
+
+    const body3 = {
+      name: null,
+      fullName: 'Gandalf the Pink'
+    };
+
+    const body4 = {
+      name: {
+        first: 'George',
+        last: 'Gandhi'
+      },
+      fullName: null
+    };
+
+    const body5 = {
+      name: null,
+      fullName: null
+    };
+
+    let validator = should.be.a.non.empty.string.onlyWhen($('name').does.not.exist).__exec();
+
+    expect(await validator(body2.fullName, body2)).to.be.true;
+    expect(await validator(undefined, body1)).to.be.true;
+
+    validator = should.be.an.object.with.children({
+      first: that.is.a.non.empty.string,
+      last: that.is.a.non.empty.string
+    }).onlyWhen($('fullName').does.not.exist).__exec();
+
+    expect(await validator(body1.name, body1)).to.be.true;
+    expect(await validator(undefined, body2)).to.be.true;
+
+    validator = should.be.a.non.empty.string.when($('name').either(
+      is.not.an.object,
+      does.not.have.children({
+        first: that.is.a.non.empty.string,
+        last: that.is.a.non.empty.string
+      })
+    )).__exec();
+
+    expect(await validator(body3.fullName, body3)).to.be.true;
+    expect(await validator(body4.fullName, body4)).to.be.true;
+    expect(await validator(body5.fullName, body5)).to.be.false;
+
+  });
+
+  it('should validate using "could" correctly', async function() {
+
+    let validator = could.be.a.non.empty.string.__exec();
+
+    expect(await validator(undefined)).to.be.true;
+    expect(await validator(null)).to.be.false;
+    expect(await validator('')).to.be.false;
+    expect(await validator('123')).to.be.true;
+    expect(await validator(false)).to.be.false;
+
+  });
+
+  it('should validate using "$" for resolving references correctly', async function() {
+
+    const body = {
+      you: {
+        have: {
+          to: {
+            reach: {
+              here: {
+                value1: true,
+                value2: 123,
+                value3: 'string'
+              }
+            }
+          }
+        }
+      }
+    };
+
+    let validator = $('you.have.to.reach.here.value1').should.be.a.boolean.__exec();
+
+    expect(await validator('not a boolean', body)).to.be.true;
+    expect(await validator(undefined, body)).to.be.true;
+
+    validator = $('you.have.to.reach.here.value2').should.be.a.number.__exec();
+
+    expect(await validator('not a number', body)).to.be.true;
+    expect(await validator(undefined, body)).to.be.true;
+
+    validator = $('you.have.to.reach.here.value3').should.be.equal('strings').__exec();
+
+    expect(await validator('string', body)).to.be.false;
+    expect(await validator(undefined, body)).to.be.false;
+
+    validator = $('cant.reach.here').should.be.a.boolean.__exec();
+
+    expect(await validator('not a boolean', body)).to.be.false;
+    expect(await validator(undefined, body)).to.be.false;
+
+    validator = $('cant.reach.here').should.be.undefined.__exec();
+
+    expect(await validator('not a boolean', body)).to.be.true;
+    expect(await validator(null, body)).to.be.true;
 
   });
 
