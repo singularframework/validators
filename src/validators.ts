@@ -11,7 +11,8 @@ export class Validators {
     private __negateNext: boolean = false,
     private __optional: boolean = false,
     private __refAsValue: string = null,
-    private __conditions: Array<ValidatorFunction|AsyncValidatorFunction> = []
+    private __conditions: Array<ValidatorFunction|AsyncValidatorFunction> = [],
+    private __strictConditions: boolean = false
   ) { }
 
   /** Wraps a validator if necessary based on this.__negate and this.__lengthAsValue. */
@@ -37,7 +38,8 @@ export class Validators {
       false,
       this.__optional,
       this.__refAsValue,
-      this.__conditions
+      this.__conditions,
+      this.__strictConditions
     );
 
   }
@@ -59,15 +61,22 @@ export class Validators {
       // If conditional validation
       if ( this.__conditions.length ) {
 
+        let result = true;
+
         // AND all conditions
         for ( const validator of this.__conditions ) {
 
           const validatorResult = await validator(value, rawValues);
 
           // Ignore when conditions are not true
-          if ( validatorResult instanceof Error || validatorResult === false ) return true;
+          if ( validatorResult instanceof Error || validatorResult === false ) result = false;
 
         }
+
+        // Strict conditions where conditions didn't pass (expect value to be undefined)
+        if ( this.__strictConditions && ! result ) return validators.undefined(value, rawValues);
+        // Loose conditions where conditions didn't pass (ignore validation)
+        else if ( ! result ) return true;
 
       }
 
@@ -164,7 +173,8 @@ export class Validators {
       true,
       this.__optional,
       this.__refAsValue,
-      this.__conditions
+      this.__conditions,
+      this.__strictConditions
     );
 
   }
@@ -179,7 +189,8 @@ export class Validators {
       this.__negateNext,
       this.__optional,
       this.__refAsValue,
-      this.__conditions
+      this.__conditions,
+      this.__strictConditions
     );
 
   }
@@ -194,7 +205,8 @@ export class Validators {
       this.__negateNext,
       this.__optional,
       this.__refAsValue,
-      this.__conditions
+      this.__conditions,
+      this.__strictConditions
     );
 
   }
@@ -266,7 +278,7 @@ export class Validators {
 
   }
 
-  /** Runs the validators if all passed-in validators pass the validation. */
+  /** Runs the validators on value if all passed-in validators pass the validation. */
   public when(
     validator: ValidatorFunction|AsyncValidatorFunction|Validators,
     ...additionalValidators: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
@@ -278,6 +290,18 @@ export class Validators {
     );
 
     return this;
+
+  }
+
+  /** Runs the validators on value if all passed-in validators pass the validation, otherwise checks the value to be undefined. */
+  public onlyWhen(
+    validator: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalValidators: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+  ) {
+
+    this.__strictConditions = true;
+
+    return this.when(validator, ...additionalValidators);
 
   }
 
