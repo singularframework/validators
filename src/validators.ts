@@ -12,7 +12,8 @@ export class Validators {
     private __optional: boolean = false,
     private __refAsValue: string = null,
     private __conditions: Array<ValidatorFunction|AsyncValidatorFunction> = [],
-    private __strictConditions: boolean = false
+    private __strictConditions: boolean = false,
+    private __errorMessage: string = null
   ) { }
 
   /** Wraps a validator if necessary based on this.__negate and this.__lengthAsValue. */
@@ -39,7 +40,8 @@ export class Validators {
       this.__optional,
       this.__refAsValue,
       this.__conditions,
-      this.__strictConditions
+      this.__strictConditions,
+      this.__errorMessage
     );
 
   }
@@ -74,9 +76,21 @@ export class Validators {
         }
 
         // Strict conditions where conditions didn't pass (expect value to be undefined)
-        if ( this.__strictConditions && ! result ) return validators.undefined(value, rawValues);
+        if ( this.__strictConditions && ! result ) {
+
+          const isUndefined = value === undefined;
+
+          if ( isUndefined ) return true;
+
+          return this.__errorMessage ? new Error(this.__errorMessage) : false;
+
+        }
         // Loose conditions where conditions didn't pass (ignore validation)
-        else if ( ! result ) return true;
+        else if ( ! result ) {
+
+          return true;
+
+        }
 
       }
 
@@ -85,7 +99,8 @@ export class Validators {
 
         const validatorResult = await validator(value, rawValues);
 
-        if ( validatorResult instanceof Error || validatorResult === false ) return validatorResult;
+        if ( validatorResult instanceof Error ) return validatorResult;
+        if ( ! validatorResult ) return this.__errorMessage ? new Error(this.__errorMessage) : false;
 
       }
 
@@ -174,7 +189,8 @@ export class Validators {
       this.__optional,
       this.__refAsValue,
       this.__conditions,
-      this.__strictConditions
+      this.__strictConditions,
+      this.__errorMessage
     );
 
   }
@@ -190,7 +206,8 @@ export class Validators {
       this.__optional,
       this.__refAsValue,
       this.__conditions,
-      this.__strictConditions
+      this.__strictConditions,
+      this.__errorMessage
     );
 
   }
@@ -206,8 +223,18 @@ export class Validators {
       this.__optional,
       this.__refAsValue,
       this.__conditions,
-      this.__strictConditions
+      this.__strictConditions,
+      this.__errorMessage
     );
+
+  }
+
+  /** Sets a custom error message to be shown when validations don't pass. */
+  public otherwise(message: string) {
+
+    this.__errorMessage = message;
+
+    return this;
 
   }
 
