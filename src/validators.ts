@@ -63,7 +63,7 @@ export class Validators {
       // If conditional validation
       if ( this.__conditions.length ) {
 
-        let result = true;
+        let result: boolean|Error = true;
 
         // AND all conditions
         for ( const validator of this.__conditions ) {
@@ -71,22 +71,25 @@ export class Validators {
           const validatorResult = await validator(value, rawValues);
 
           // Ignore when conditions are not true
-          if ( validatorResult instanceof Error || validatorResult === false ) result = false;
+          if ( validatorResult instanceof Error || validatorResult === false ) {
+
+            result = validatorResult;
+            continue;
+
+          }
 
         }
 
         // Strict conditions where conditions didn't pass (expect value to be undefined)
-        if ( this.__strictConditions && ! result ) {
+        if ( this.__strictConditions && (result === false || result instanceof Error) ) {
 
-          const isUndefined = value === undefined;
+          if ( value === undefined ) return true;
 
-          if ( isUndefined ) return true;
-
-          return this.__errorMessage ? new Error(this.__errorMessage) : false;
+          return result instanceof Error ? result : false;
 
         }
         // Loose conditions where conditions didn't pass (ignore validation)
-        else if ( ! result ) {
+        else if ( result === false || result instanceof Error ) {
 
           return true;
 
