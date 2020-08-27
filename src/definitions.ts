@@ -96,7 +96,7 @@ const validators = {
 
   }),
   enum: (enumerator: any) => <ValidatorFunction>(value => !! enumerator && typeof enumerator === 'object' && Object.values(enumerator).includes(value)),
-  date: <ValidatorFunction>(value => DateTime.fromJSDate(new Date(value)).isValid),
+  date: <ValidatorFunction>(value => (typeof value === 'string' || typeof value === 'number') && DateTime.fromJSDate(new Date(value)).isValid),
   timezone: <ValidatorFunction>(value => !! value && IANAZone.isValidZone(value)),
   or: (...validators: Array<ValidatorFunction|AsyncValidatorFunction>) => {
 

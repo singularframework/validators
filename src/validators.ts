@@ -165,6 +165,59 @@ export class Validators {
   public get with() { return this; }
   /** Aesthetic property. */
   public get do() { return this; }
+  /** Aesthetic property. */
+  public get valid() { return this; }
+
+  // Aliases
+
+  /** Checks if value is equal to target. */
+  public eq(target: any) { return this.equal(target); }
+  /** Checks if value is equal to target. */
+  public equals(target: any) { return this.equal(target); }
+  /** Checks if value is equal to target resolved from reference. */
+  public eqRef(ref: string) { return this.equalRef(ref); }
+  /** Checks if value is equal to target resolved from reference. */
+  public equalsRef(ref: string) { return this.equalRef(ref); }
+  /** Checks if value is not undefined. */
+  public get exists() { return this.exist; }
+  /** Checks if value matches a regular expression (using value.match). */
+  public matches(regex: RegExp) { return this.match(regex); }
+  /** Checks if value includes target (using value.includes). */
+  public includes(target: any) { return this.include(target); }
+  /** Checks if value includes target resolved from reference (using value.includes). */
+  public includesRef(ref: string) { return this.includeRef(ref); }
+  /** Checks if value includes all targets (using value.includes). */
+  public includesAll(...targets: any[]) { return this.includeAll(...targets); }
+  /** Runs the validators on value if all passed-in validators pass the validation. */
+  public if(
+    validator: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalValidators: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+  ) {
+
+    return this.when(validator, ...additionalValidators);
+
+  }
+
+  /** Runs the validators on value if all passed-in validators pass the validation, otherwise checks the value to be undefined. */
+  public onlyIf(
+    validator: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalValidators: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+  ) {
+
+    return this.onlyWhen(validator, ...additionalValidators);
+
+  }
+
+  /** Checks the value to be a string. */
+  public get strings() { return this.string; }
+  /** Checks the value to be a boolean. */
+  public get booleans() { return this.boolean; }
+  /** Checks the value to be a number. */
+  public get numbers() { return this.number; }
+  /** Checks the value to be an object. */
+  public get objects() { return this.object; }
+  /** Checks the value to be an array. */
+  public get arrays() { return this.array; }
 
   // Type checkers
 
@@ -363,7 +416,7 @@ export class Validators {
   public get timezone() { return this.__addValidator(validators.timezone); }
   /**
   * Checks if value is empty.
-  * This validator checks for zero length for strings and arrays, zero value for numbers, and no children for objects.
+  * This validator checks zero length for strings and arrays, zero value for numbers, and no children for objects.
   */
   public get empty() { return this.__addValidator(validators.empty); }
   /**
@@ -432,6 +485,8 @@ export const which = new Validators();
 export const where = new Validators();
 /** Aesthetic property. */
 export const does = new Validators();
+/** Aesthetic property. */
+export const valid = new Validators();
 /** Optional validation which ignores validation rules when value is undefined. */
 export const could = new Validators([], false, false, false, true);
 /** Returns validators for the value resolved from a path. */

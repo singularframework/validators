@@ -1,5 +1,5 @@
 import 'source-map-support/register';
-import { should, $ } from '../..';
+import { should, that, $ } from '../..';
 import { expect } from 'chai';
 
 describe('Validators', function() {
@@ -619,6 +619,111 @@ describe('Validators', function() {
     expect(await validator('Value1')).to.be.false;
     expect(await validator(0)).to.be.false;
     expect(await validator(StringEnum.Value2)).to.be.false;
+
+  });
+
+  it('should validate dates correctly', async function() {
+
+    let validator = should.be.a.date.__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator(0)).to.be.true;
+    expect(await validator(Date.now())).to.be.true;
+    expect(await validator('2020-8-27 12:11 pm')).to.be.true;
+
+  });
+
+  it('should validate timezones correctly', async function() {
+
+    let validator = should.be.a.valid.timezone.__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator('America/Captain')).to.be.false;
+    expect(await validator('America/Los_Angeles')).to.be.true;
+    expect(await validator('Iran')).to.be.true;
+
+  });
+
+  it('should validate empty values correctly', async function() {
+
+    let validator = should.be.empty.__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator([])).to.be.true;
+    expect(await validator([1])).to.be.false;
+    expect(await validator(0)).to.be.true;
+    expect(await validator(123)).to.be.false;
+    expect(await validator('')).to.be.true;
+    expect(await validator('string')).to.be.false;
+    expect(await validator({})).to.be.true;
+    expect(await validator({ a: 1 })).to.be.false;
+    expect(await validator(NaN)).to.be.false;
+    expect(await validator(/abc/)).to.be.false;
+    expect(await validator(false)).to.be.false;
+    expect(await validator(true)).to.be.false;
+
+  });
+
+  it('should validate children correctly', async function() {
+
+    const body = {
+      author: {
+        first: 'Mahatma',
+        last: 'Bush'
+      },
+      books: [
+        { title: 'Peace Accomplished!', available: true, year: 1990 },
+        { title: 'Why we went back to 1990', available: false, year: 2045 },
+        { title: 'CC Roast Book', available: true, year: 2018 }
+      ],
+      tags: ['is', 'not', 'a', 'real', 'person']
+    };
+
+    let validator = should.have.children({
+      first: should.be.a.non.empty.string,
+      last: should.be.a.non.empty.string.__exec()
+    }).__exec();
+
+    expect(await validator(body.author)).to.be.true;
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator(body.tags)).to.be.false;
+
+    validator = should.have.children(that.is.an.object).__exec();
+
+    expect(await validator(body.author)).to.be.true;
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator(body.tags)).to.be.false;
+    expect(await validator(body.books)).to.be.true;
+
+    validator = should.have.children(that.are.non.empty.strings).__exec();
+
+    expect(await validator(body.author)).to.be.false;
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator(body.tags)).to.be.true;
+
+    validator = should.have.children(that.are.non.empty.strings.__exec()).__exec();
+
+    expect(await validator(body.author)).to.be.false;
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator(body.tags)).to.be.true;
+
+    validator = should.have.children({
+      title: should.be.string,
+      available: should.be.boolean,
+      year: should.be.number
+    }).__exec();
+
+    expect(await validator(body.author)).to.be.false;
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator(body.books)).to.be.true;
 
   });
 
