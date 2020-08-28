@@ -2,6 +2,13 @@ import 'source-map-support/register';
 import { ValidatorFunction, AsyncValidatorFunction, resolveRef, ValidationDefinition } from '@singular/core';
 import validators from './definitions';
 
+interface ValidationConditions {
+
+  type: 'ignore'|'unless'|'exist'|'strict';
+  validators: Array<ValidatorFunction|AsyncValidatorFunction>;
+
+}
+
 export class Validators {
 
   constructor(
@@ -11,8 +18,7 @@ export class Validators {
     private __negateNext: boolean = false,
     private __optional: boolean = false,
     private __refAsValue: string = null,
-    private __conditions: Array<ValidatorFunction|AsyncValidatorFunction> = [],
-    private __strictConditions: boolean = false,
+    private __conditions: ValidationConditions = null,
     private __errorMessage: string = null
   ) { }
 
@@ -40,7 +46,6 @@ export class Validators {
       this.__optional,
       this.__refAsValue,
       this.__conditions,
-      this.__strictConditions,
       this.__errorMessage
     );
 
@@ -60,46 +65,51 @@ export class Validators {
       // If whole validation is optional
       if ( this.__optional && value === undefined ) return true;
 
+      let unlessNegate = false;
+
       // If conditional validation
-      if ( this.__conditions.length ) {
+      if ( this.__conditions ) {
 
         let result: boolean|Error = true;
 
-        // AND all conditions
-        for ( const validator of this.__conditions ) {
+        for ( const condition of this.__conditions.validators ) {
 
-          const validatorResult = await validator(value, rawValues);
+          const conditionResult = await condition(value, rawValues);
 
-          // Ignore when conditions are not true
-          if ( validatorResult instanceof Error || validatorResult === false ) {
+          // If condition failed
+          if ( conditionResult instanceof Error || ! conditionResult ) {
 
-            result = validatorResult;
-            continue;
+            result = conditionResult;
+            break;
 
           }
 
         }
 
-        // Strict conditions where conditions didn't pass (expect value to be undefined)
-        if ( this.__strictConditions && (result === false || result instanceof Error) ) {
+        // If all conditions passed
+        if ( result === true ) {
 
-          if ( value === undefined ) return true;
-
-          return result instanceof Error ? result : false;
+          if ( this.__conditions.type === 'unless' ) unlessNegate = true;
 
         }
-        // Loose conditions where conditions didn't pass (ignore validation)
-        else if ( result === false || result instanceof Error ) {
+        // If conditions failed
+        else {
 
-          return true;
+          if ( this.__conditions.type === 'ignore' || this.__conditions.type === 'unless' ) return true;
+          if ( this.__conditions.type === 'exist' ) return value === undefined ? true : result;
+          if ( this.__conditions.type === 'strict' ) return result;
 
         }
 
       }
 
       // AND all validators
-      for ( const validator of this.__validators ) {
+      for ( let validator of this.__validators ) {
 
+        // Negate for unless
+        if ( unlessNegate ) validator = validators.not(validator);
+
+        // Run validator
         const validatorResult = await validator(value, rawValues);
 
         if ( validatorResult instanceof Error ) return validatorResult;
@@ -148,6 +158,8 @@ export class Validators {
   /** Aesthetic property. */
   public get these() { return this; }
   /** Aesthetic property. */
+  public get there() { return this; }
+  /** Aesthetic property. */
   public get that() { return this; }
   /** Aesthetic property. */
   public get as() { return this; }
@@ -188,23 +200,42 @@ export class Validators {
   public includesRef(ref: string) { return this.includeRef(ref); }
   /** Checks if value includes all targets (using value.includes). */
   public includesAll(...targets: any[]) { return this.includeAll(...targets); }
-  /** Runs the validators on value if all passed-in validators pass the validation. */
+  /** Runs the validators on value if all passed-in conditions pass the validation, otherwise ignores validation and returns true. */
   public if(
-    validator: ValidatorFunction|AsyncValidatorFunction|Validators,
-    ...additionalValidators: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+    condition: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalConditions: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
   ) {
 
-    return this.when(validator, ...additionalValidators);
+    return this.when(condition, ...additionalConditions);
+
+  }
+  /** Runs the validators on value if all passed-in conditions pass the validation, otherwise ignores validation and returns true. */
+  public ignoreUnless(
+    condition: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalConditions: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+  ) {
+
+    return this.when(condition, ...additionalConditions);
 
   }
 
-  /** Runs the validators on value if all passed-in validators pass the validation, otherwise checks the value to be undefined. */
-  public onlyIf(
-    validator: ValidatorFunction|AsyncValidatorFunction|Validators,
-    ...additionalValidators: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+  /** Runs the validators on value if all passed-in conditions pass the validation, otherwise checks the value to be undefined. */
+  public existIf(
+    condition: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalConditions: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
   ) {
 
-    return this.onlyWhen(validator, ...additionalValidators);
+    return this.existWhen(condition, ...additionalConditions);
+
+  }
+
+  /** Runs the validators on value if all passed-in conditions pass the validation, otherwise fails the validation. */
+  public onlyIf(
+    condition: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalConditions: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+  ) {
+
+    return this.onlyWhen(condition, ...additionalConditions);
 
   }
 
@@ -245,7 +276,6 @@ export class Validators {
       this.__optional,
       this.__refAsValue,
       this.__conditions,
-      this.__strictConditions,
       this.__errorMessage
     );
 
@@ -262,7 +292,6 @@ export class Validators {
       this.__optional,
       this.__refAsValue,
       this.__conditions,
-      this.__strictConditions,
       this.__errorMessage
     );
 
@@ -279,7 +308,6 @@ export class Validators {
       this.__optional,
       this.__refAsValue,
       this.__conditions,
-      this.__strictConditions,
       this.__errorMessage
     );
 
@@ -348,6 +376,19 @@ export class Validators {
 
   // Logic gates
 
+  /** ANDs all given validators. */
+  public allTrue(
+    validator: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalValidators: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+  ) {
+
+    return this.__addValidator(validators.and(...[].concat(
+      validator instanceof Validators ? validator.__exec() : validator,
+      ...additionalValidators.map(validator => validator instanceof Validators ? validator.__exec() : validator)
+    )));
+
+  }
+
   /** ORs all given validators. */
   public either(
     validator: ValidatorFunction|AsyncValidatorFunction|Validators,
@@ -361,30 +402,103 @@ export class Validators {
 
   }
 
-  /** Runs the validators on value if all passed-in validators pass the validation. */
+  /** Runs the validators on value if all passed-in conditions pass the validation, otherwise ignores validation and returns true. */
   public when(
-    validator: ValidatorFunction|AsyncValidatorFunction|Validators,
-    ...additionalValidators: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+    condition: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalConditions: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
   ) {
 
-    this.__conditions = this.__conditions.concat(
-      validator instanceof Validators ? validator.__exec() : validator,
-      ...additionalValidators.map(validator => validator instanceof Validators ? validator.__exec() : validator)
+    return new Validators(
+      this.__validators,
+      this.__lengthAsValue,
+      this.__negate,
+      this.__negateNext,
+      this.__optional,
+      this.__refAsValue,
+      {
+        type: 'ignore',
+        validators: [
+          condition instanceof Validators ? condition.__exec() : condition,
+          ...additionalConditions.map(condition => condition instanceof Validators ? condition.__exec() : condition)
+        ]
+      },
+      this.__errorMessage
     );
-
-    return this;
 
   }
 
-  /** Runs the validators on value if all passed-in validators pass the validation, otherwise checks the value to be undefined. */
-  public onlyWhen(
-    validator: ValidatorFunction|AsyncValidatorFunction|Validators,
-    ...additionalValidators: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+  /** Runs the validators on value if all passed-in conditions pass the validation, otherwise checks the value to be undefined. */
+  public existWhen(
+    condition: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalConditions: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
   ) {
 
-    this.__strictConditions = true;
+    return new Validators(
+      this.__validators,
+      this.__lengthAsValue,
+      this.__negate,
+      this.__negateNext,
+      this.__optional,
+      this.__refAsValue,
+      {
+        type: 'exist',
+        validators: [
+          condition instanceof Validators ? condition.__exec() : condition,
+          ...additionalConditions.map(condition => condition instanceof Validators ? condition.__exec() : condition)
+        ]
+      },
+      this.__errorMessage
+    );
 
-    return this.when(validator, ...additionalValidators);
+  }
+
+  /** Runs the validators on value if all passed-in conditions pass the validation, otherwise fails the validation. */
+  public onlyWhen(
+    condition: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalConditions: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+  ) {
+
+    return new Validators(
+      this.__validators,
+      this.__lengthAsValue,
+      this.__negate,
+      this.__negateNext,
+      this.__optional,
+      this.__refAsValue,
+      {
+        type: 'strict',
+        validators: [
+          condition instanceof Validators ? condition.__exec() : condition,
+          ...additionalConditions.map(condition => condition instanceof Validators ? condition.__exec() : condition)
+        ]
+      },
+      this.__errorMessage
+    );
+
+  }
+
+  /** Runs the validators on value if all passed-in conditions fail the validation, otherwise negates the validators. */
+  public unless(
+    condition: ValidatorFunction|AsyncValidatorFunction|Validators,
+    ...additionalConditions: Array<ValidatorFunction|AsyncValidatorFunction|Validators>
+  ) {
+
+    return new Validators(
+      this.__validators,
+      this.__lengthAsValue,
+      this.__negate,
+      this.__negateNext,
+      this.__optional,
+      this.__refAsValue,
+      {
+        type: 'unless',
+        validators: [
+          condition instanceof Validators ? condition.__exec() : condition,
+          ...additionalConditions.map(condition => condition instanceof Validators ? condition.__exec() : condition)
+        ]
+      },
+      this.__errorMessage
+    );
 
   }
 
@@ -471,6 +585,8 @@ export const its = new Validators();
 export const must = new Validators();
 /** Aesthetic property. */
 export const these = new Validators();
+/** Aesthetic property. */
+export const there = new Validators();
 /** Aesthetic property. */
 export const that = new Validators();
 /** Aesthetic property. */

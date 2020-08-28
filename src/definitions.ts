@@ -115,6 +115,23 @@ const validators = {
     };
 
   },
+  and: (...validators: Array<ValidatorFunction|AsyncValidatorFunction>) => {
+
+    return async (value: any, rawValues?: any) => {
+
+      for ( const validator of validators ) {
+
+        const validatorResult = await validator(value, rawValues);
+
+        if ( ! validatorResult || validatorResult instanceof Error ) return validatorResult;
+
+      }
+
+      return true;
+
+    };
+
+  },
   empty: <ValidatorFunction>(value => {
 
     if ( typeof value === 'string' ) return value.length === 0;
