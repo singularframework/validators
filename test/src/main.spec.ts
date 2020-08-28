@@ -1,6 +1,7 @@
 import 'source-map-support/register';
-import { should, could, that, is, does, $ } from '../..';
+import { should, could, that, is, does, $, are, be, there, these } from '../..';
 import { expect } from 'chai';
+import { ValidationDefinition, AsyncValidatorFunction } from '@singular/core';
 
 describe('Validators', function() {
 
@@ -216,7 +217,7 @@ describe('Validators', function() {
     const body4 = { reason: 'other', explanation: true };
 
     // Should be a non-empty string when "reason" is "other", otherwise should be undefined
-    validator = should.be.a.non.empty.string.onlyWhen(
+    validator = should.be.a.non.empty.string.existWhen(
       $('reason').does.equal(Reason.Other).otherwise(errorMessage2)
     ).otherwise(errorMessage).__exec();
 
@@ -762,7 +763,7 @@ describe('Validators', function() {
 
   });
 
-  it('should validate conditionally using "when" and "onlyWhen" correctly', async function() {
+  it('should validate conditionally using "when" and "existWhen" correctly', async function() {
 
     const body1 = {
       name: {
@@ -793,7 +794,7 @@ describe('Validators', function() {
       fullName: null
     };
 
-    let validator = should.be.a.non.empty.string.onlyWhen($('name').does.not.exist).__exec();
+    let validator = should.be.a.non.empty.string.existWhen($('name').does.not.exist).__exec();
 
     expect(await validator(body2.fullName, body2)).to.be.true;
     expect(await validator(undefined, body1)).to.be.true;
@@ -801,7 +802,7 @@ describe('Validators', function() {
     validator = should.be.an.object.with.children({
       first: that.is.a.non.empty.string,
       last: that.is.a.non.empty.string
-    }).onlyWhen($('fullName').does.not.exist).__exec();
+    }).existWhen($('fullName').does.not.exist).__exec();
 
     expect(await validator(body1.name, body1)).to.be.true;
     expect(await validator(undefined, body2)).to.be.true;
@@ -874,6 +875,253 @@ describe('Validators', function() {
 
     expect(await validator('not a boolean', body)).to.be.true;
     expect(await validator(null, body)).to.be.true;
+
+  });
+
+  it('should validate correctly using ridiculously complex rules!', async function () {
+
+    enum RequestType {
+
+      /** Requesting a service. */
+      ServiceRequest,
+      /** Providing a service. */
+      ServiceAcceptanceRequest
+
+    }
+
+    enum ServiceProvided {
+
+      WebDevelopment = 'web',
+      ComputerRepair = 'repair'
+
+    }
+
+    enum ServiceNeeded {
+
+      ManCaveCleaning = 'clean',
+      ExtensiveTherapy = 'therapy'
+
+    }
+
+    interface Request {
+
+      type: RequestType;
+      message?: string;
+      date: string;
+      email: string;
+
+    }
+
+    const backendTechnologies = ['nodejs', 'express', 'singular'];
+    const frontendTechnologies = ['angular', 'react', 'vue'];
+
+    interface WebDevelopmentRequest extends Request {
+
+      type: RequestType.ServiceRequest;
+      serviceRequested: ServiceProvided.WebDevelopment;
+      /** Should only exist if "frontend" does not exist or is false. */
+      backend?: boolean;
+      /** Should only exist if "backend" does not exist or is false. */
+      frontend?: boolean;
+      /** Either part of "backendTechnologies" or "frontendTechnologies" based on "backend" value. */
+      technologies: string[];
+
+    }
+
+    interface ComputerRepairRequest extends Request {
+
+      type: RequestType.ServiceRequest;
+      serviceRequested: ServiceProvided.ComputerRepair;
+      issues: {
+        cause: 'hardware'|'software',
+        explanation: string;
+      }[];
+      address: {
+        street: string;
+        street2?: string;
+        city: string;
+        state: string;
+        zip: number;
+      };
+
+    }
+
+    interface CleaningAcceptanceRequest extends Request {
+
+      type: RequestType.ServiceAcceptanceRequest;
+      serviceProvided: ServiceNeeded.ManCaveCleaning;
+      /** From 0 to 1. */
+      filthPercentage: number;
+      availableHours: {
+        /** Must be between 0 (inclusive) to 24 (exclusive) and before "availableHours.to". */
+        from: number;
+        /** Must be between 0 (inclusive) to 24 (exclusive) and after "availableHours.from". */
+        to: number;
+      };
+
+    }
+
+    interface TherapyAcceptanceRequest extends Request {
+
+      type: RequestType.ServiceAcceptanceRequest;
+      serviceProvided: ServiceNeeded.ExtensiveTherapy;
+      assignedTherapist: {
+        name: string;
+        /** Must be greater than 18. */
+        age: number;
+        /** Must be less than "age" and not zero. */
+        yearsOfExperience: number;
+      };
+      remote: boolean;
+      /** Must exist if "remote" is false. */
+      address?: {
+        street: string;
+        street2?: string;
+        city: string;
+        state: string;
+        zip: number;
+      };
+
+    }
+
+    // Valid requests
+    const backendDevelopmentRequest: WebDevelopmentRequest = {
+      type: RequestType.ServiceRequest,
+      serviceRequested: ServiceProvided.WebDevelopment,
+      backend: true,
+      frontend: false,
+      technologies: ['nodejs', 'singular'],
+      message: 'Build a server that doesn\'t suck!',
+      date: '2020-8-27 3:27 pm',
+      email: 'requester@makerequests.net'
+    };
+
+    const frontendDevelopmentRequest: WebDevelopmentRequest = {
+      type: RequestType.ServiceRequest,
+      serviceRequested: ServiceProvided.WebDevelopment,
+      frontend: true,
+      technologies: ['angular'],
+      message: 'Build a web app that doesn\'t suck!',
+      date: '2020-8-27 3:27 pm',
+      email: 'requester@makerequests.net'
+    };
+
+    const repairRequest: ComputerRepairRequest = {
+      type: RequestType.ServiceRequest,
+      serviceRequested: ServiceProvided.ComputerRepair,
+      issues: [
+        { cause: 'software', explanation: 'Windows is forcing updates while I\'m rendering a video for a client...' },
+        { cause: 'hardware', explanation: 'VGA has gone color blind!' },
+        { cause: 'hardware', explanation: 'CPU is singing "Hammer Smashed Face" by Cannibal Corpse!' }
+      ],
+      address: {
+        street: '12345 Shakira ave.',
+        city: 'Piqueland',
+        state: 'Spainophobia',
+        zip: 10902053
+      },
+      date: '2020-8-27 3:27 pm',
+      email: 'requester@makerequests.net'
+    };
+
+    const cleaningRequest: CleaningAcceptanceRequest = {
+      type: RequestType.ServiceAcceptanceRequest,
+      serviceProvided: ServiceNeeded.ManCaveCleaning,
+      filthPercentage: .9,
+      availableHours: {
+        from: 12,
+        to: 18
+      },
+      date: '2020-8-27',
+      email: 'info@cavemenservices.com',
+      message: 'We will not touch your electronics. P.S: Our employees tend to steal stuff!'
+    };
+
+    const therapyRequest: TherapyAcceptanceRequest = {
+      type: RequestType.ServiceAcceptanceRequest,
+      serviceProvided: ServiceNeeded.ExtensiveTherapy,
+      assignedTherapist: {
+        name: 'Prof. Chaos',
+        age: 51,
+        yearsOfExperience: 23
+      },
+      remote: true,
+      date: '2020-8-27',
+      email: 'muhahaha@evilkids.care',
+      message: 'Just like a paper clip, I can bend you, and shape you, and make you... straight!'
+    };
+
+    async function runDefinition(def: ValidationDefinition, body: any): Promise<boolean|Error> {
+
+      for ( const key in def ) {
+
+        const result = await (<AsyncValidatorFunction>def[key])(body[key], body);
+
+        if ( ! result || result instanceof Error ) return result;
+
+      }
+
+      return true;
+
+    }
+
+    // Validator
+    const validator: ValidationDefinition = {
+      type: should.belong.to.enum(RequestType).__exec(),
+      serviceRequested: should.exist.and.belong.to.enum(ServiceProvided).existIf($('type').equals(RequestType.ServiceRequest)).__exec(),
+      serviceProvided: should.exist.and.belong.to.enum(ServiceNeeded).existIf($('type').equals(RequestType.ServiceAcceptanceRequest)).__exec(),
+      backend: should.either(
+        be.true.existWhen($('frontend').either(does.not.exist, is.false)),
+        be.falsey.existWhen($('frontend').is.true)
+      ).existIf($('serviceRequested').equals(ServiceProvided.WebDevelopment)).__exec(),
+      frontend: should.either(
+        be.true.existWhen($('backend').either(does.not.exist, is.false)),
+        be.falsey.existWhen($('backend').is.true)
+      ).existIf($('serviceRequested').equals(ServiceProvided.WebDevelopment)).__exec(),
+      technologies: should.be.an.array.and.have.children(that.either(
+        are.in(backendTechnologies).existWhen($('backend').is.true),
+        are.in(frontendTechnologies).existWhen($('frontend').is.true)
+      )).existIf($('serviceRequested').equals(ServiceProvided.WebDevelopment)).__exec(),
+      issues: should.be.an.array.with.children({
+        cause: should.be.in(['hardware', 'software']),
+        explanation: should.be.a.non.empty.string
+      }).existIf($('serviceRequested').equals(ServiceProvided.ComputerRepair)).__exec(),
+      address: should.be.an.object.with.children({
+        street: should.be.a.non.empty.string,
+        street2: could.be.a.non.empty.string,
+        city: could.be.a.non.empty.string,
+        state: could.be.a.non.empty.string,
+        zip: should.be.a.number
+      }).existIf(there.is.either(
+        $('serviceRequested').that.equals(ServiceProvided.ComputerRepair),
+        these.are.allTrue(
+          $('serviceProvided').that.equals(ServiceNeeded.ExtensiveTherapy),
+          $('remote').is.false
+        )
+      )).__exec(),
+      filthPercentage: should.be.a.number.between(0, 1).existWhen(
+        $('serviceProvided').equals(ServiceNeeded.ManCaveCleaning)
+      ).__exec(),
+      availableHours: should.be.an.object.with.children({
+        from: should.be.a.number.gte(0).and.lt(24).and.ltRef('availableHours.to'),
+        to: should.be.a.number.gte(0).and.lt(24).and.gtRef('availableHours.from')
+      }).existIf($('serviceProvided').equals(ServiceNeeded.ManCaveCleaning)).__exec(),
+      remote: should.be.boolean.existWhen($('serviceProvided').that.equals(ServiceNeeded.ExtensiveTherapy)).__exec(),
+      assignedTherapist: should.be.an.object.with.children({
+        name: should.be.a.non.empty.string,
+        age: should.be.a.number.gt(18),
+        yearsOfExperience: should.be.a.number.that.is.non.zero.and.ltRef('assignedTherapist.age')
+      }).existIf($('serviceProvided').that.equals(ServiceNeeded.ExtensiveTherapy)).__exec(),
+      message: could.be.a.non.empty.string.__exec(),
+      date: should.be.a.date.__exec(),
+      email: should.be.an.email.__exec()
+    };
+
+    expect(await runDefinition(validator, backendDevelopmentRequest)).to.be.true;
+    expect(await runDefinition(validator, frontendDevelopmentRequest)).to.be.true;
+    expect(await runDefinition(validator, repairRequest)).to.be.true;
+    expect(await runDefinition(validator, cleaningRequest)).to.be.true;
+    expect(await runDefinition(validator, therapyRequest)).to.be.true;
 
   });
 
