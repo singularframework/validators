@@ -1,7 +1,7 @@
 import 'source-map-support/register';
 import { should, could, that, is, does, $, are, be, there, these } from '../..';
 import { expect } from 'chai';
-import { ValidationDefinition, AsyncValidatorFunction } from '@singular/core';
+import { ValidationDefinition, AsyncValidatorFunction } from '@singular/common';
 
 describe('Validators', function() {
 

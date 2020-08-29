@@ -1,4 +1,4 @@
-import { ValidatorFunction, AsyncValidatorFunction, resolveRef, ValidationDefinition } from '@singular/core';
+import { ValidatorFunction, AsyncValidatorFunction, resolveRef, ValidationDefinition } from '@singular/common';
 import { DateTime, IANAZone } from 'luxon';
 
 const validators = {

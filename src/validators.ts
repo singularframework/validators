@@ -1,5 +1,5 @@
 import 'source-map-support/register';
-import { ValidatorFunction, AsyncValidatorFunction, resolveRef, ValidationDefinition } from '@singular/core';
+import { ValidatorFunction, AsyncValidatorFunction, resolveRef, ValidationDefinition } from '@singular/common';
 import validators from './definitions';
 
 interface ValidationConditions {
