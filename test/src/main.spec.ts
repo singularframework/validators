@@ -763,7 +763,7 @@ describe('Validators', function() {
 
   });
 
-  it('should validate conditionally using "when" and "existWhen" correctly', async function() {
+  it('should validate conditionally correctly', async function() {
 
     const body1 = {
       name: {
@@ -794,6 +794,30 @@ describe('Validators', function() {
       fullName: null
     };
 
+    const body6 = {
+      fullName: null
+    };
+
+    const body7 = {
+      name: 'James Bound',
+      male: true
+    };
+
+    const body8 = {
+      name: 'Cameron Piaz',
+      female: true
+    };
+
+    const body9 = {
+      name: 'Cameron Piaz',
+      female: false
+    };
+
+    const body10 = {
+      name: 'Cameron Niaz',
+      female: true
+    };
+
     let validator = should.be.a.non.empty.string.existWhen($('name').does.not.exist).__exec();
 
     expect(await validator(body2.fullName, body2)).to.be.true;
@@ -818,6 +842,54 @@ describe('Validators', function() {
     expect(await validator(body3.fullName, body3)).to.be.true;
     expect(await validator(body4.fullName, body4)).to.be.true;
     expect(await validator(body5.fullName, body5)).to.be.false;
+
+    validator = should.be.a.non.empty.string.unless($('name').exists).__exec();
+
+    expect(await validator(body2.fullName, body2)).to.be.true;
+    expect(await validator((<any>body1).fullName, body1)).to.be.false;
+    expect(await validator(body6.fullName, body6)).to.be.false;
+
+    validator = should.be.true.onlyWhen($('name').equals('James Bound')).__exec();
+
+    expect(await validator(body7.male, body7)).to.be.true;
+    expect(await validator((<any>body7).female, body7)).to.be.false;
+
+    validator = should.be.true.onlyWhen($('name').equals('Cameron Piaz')).__exec();
+
+    expect(await validator(body8.female, body8)).to.be.true;
+    expect(await validator((<any>body7).female, body7)).to.be.false;
+    expect(await validator(body9.female, body9)).to.be.false;
+    expect(await validator(body10.female, body10)).to.be.false;
+
+  });
+
+  it('should validate using "allTrue" correctly', async function() {
+
+    const body1 = {
+      val1: 1,
+      val2: 2,
+      val3: 3,
+      val4: 0,
+      value: true
+    };
+
+    const body2 = {
+      val1: 1,
+      val2: 2,
+      val3: 3,
+      val4: 4,
+      value: true
+    };
+
+    let validator = should.be.true.while.these.are.allTrue(
+      $('val1').equals(1),
+      $('val2').equals(2),
+      $('val3').equals(3),
+      $('val4').equals(4)
+    ).__exec();
+
+    expect(await validator(body1.value, body1)).to.be.false;
+    expect(await validator(body2.value, body2)).to.be.true;
 
   });
 
@@ -1051,6 +1123,70 @@ describe('Validators', function() {
       message: 'Just like a paper clip, I can bend you, and shape you, and make you... straight!'
     };
 
+    const therapyRequest2: TherapyAcceptanceRequest = {
+      type: RequestType.ServiceAcceptanceRequest,
+      serviceProvided: ServiceNeeded.ExtensiveTherapy,
+      assignedTherapist: {
+        name: 'Prof. Chaos',
+        age: 51,
+        yearsOfExperience: 23
+      },
+      remote: false,
+      address: {
+        street: '12345 Shakira ave.',
+        city: 'Piqueland',
+        state: 'Spainophobia',
+        zip: 10902053
+      },
+      date: '2020-8-27',
+      email: 'muhahaha@evilkids.care',
+      message: 'Just like a paper clip, I can bend you, and shape you, and make you... straight!'
+    };
+
+    const invalidTherapyRequest: TherapyAcceptanceRequest = {
+      type: RequestType.ServiceAcceptanceRequest,
+      serviceProvided: ServiceNeeded.ExtensiveTherapy,
+      assignedTherapist: {
+        name: 'Prof. Chaos',
+        age: 51,
+        yearsOfExperience: 23
+      },
+      remote: true,
+      address: {
+        street: '12345 Shakira ave.',
+        city: 'Piqueland',
+        state: 'Spainophobia',
+        zip: 10902053
+      },
+      date: '2020-8-27',
+      email: 'muhahaha@evilkids.care',
+      message: 'Just like a paper clip, I can bend you, and shape you, and make you... straight!'
+    };
+
+    const invalidCleaningRequest: CleaningAcceptanceRequest = {
+      type: RequestType.ServiceAcceptanceRequest,
+      serviceProvided: ServiceNeeded.ManCaveCleaning,
+      filthPercentage: .9,
+      availableHours: {
+        from: 12,
+        to: 3
+      },
+      date: '2020-8-27',
+      email: 'info@cavemenservices.com',
+      message: 'We will not touch your electronics. P.S: Our employees tend to steal stuff!'
+    };
+
+    const invalidFrontendDevelopmentRequest: WebDevelopmentRequest = {
+      type: RequestType.ServiceRequest,
+      serviceRequested: ServiceProvided.WebDevelopment,
+      frontend: true,
+      backend: true,
+      technologies: ['angular'],
+      message: 'Build a web app that doesn\'t suck!',
+      date: '2020-8-27 3:27 pm',
+      email: 'requester@makerequests.net'
+    };
+
     async function runDefinition(def: ValidationDefinition, body: any): Promise<boolean|Error> {
 
       for ( const key in def ) {
@@ -1070,17 +1206,19 @@ describe('Validators', function() {
       type: should.belong.to.enum(RequestType).__exec(),
       serviceRequested: should.exist.and.belong.to.enum(ServiceProvided).existIf($('type').equals(RequestType.ServiceRequest)).__exec(),
       serviceProvided: should.exist.and.belong.to.enum(ServiceNeeded).existIf($('type').equals(RequestType.ServiceAcceptanceRequest)).__exec(),
-      backend: should.either(
-        be.true.existWhen($('frontend').either(does.not.exist, is.false)),
-        be.falsey.existWhen($('frontend').is.true)
+      backend: should.have.these.allTrue(
+        is.true.unless($('frontend').is.true),
       ).existIf($('serviceRequested').equals(ServiceProvided.WebDevelopment)).__exec(),
       frontend: should.either(
-        be.true.existWhen($('backend').either(does.not.exist, is.false)),
-        be.falsey.existWhen($('backend').is.true)
+        be.true.onlyWhen($('backend').either(does.not.exist, is.false)),
+        be.either(
+          is.false.onlyWhen($('backend').is.true),
+          does.not.exist.onlyWhen($('backend').is.true)
+        )
       ).existIf($('serviceRequested').equals(ServiceProvided.WebDevelopment)).__exec(),
       technologies: should.be.an.array.and.have.children(that.either(
-        are.in(backendTechnologies).existWhen($('backend').is.true),
-        are.in(frontendTechnologies).existWhen($('frontend').is.true)
+        are.in(backendTechnologies).onlyWhen($('backend').is.true),
+        are.in(frontendTechnologies).onlyWhen($('frontend').is.true)
       )).existIf($('serviceRequested').equals(ServiceProvided.WebDevelopment)).__exec(),
       issues: should.be.an.array.with.children({
         cause: should.be.in(['hardware', 'software']),
@@ -1122,6 +1260,10 @@ describe('Validators', function() {
     expect(await runDefinition(validator, repairRequest)).to.be.true;
     expect(await runDefinition(validator, cleaningRequest)).to.be.true;
     expect(await runDefinition(validator, therapyRequest)).to.be.true;
+    expect(await runDefinition(validator, therapyRequest2)).to.be.true;
+    expect(await runDefinition(validator, invalidTherapyRequest)).to.be.false;
+    expect(await runDefinition(validator, invalidCleaningRequest)).to.be.false;
+    expect(await runDefinition(validator, invalidFrontendDevelopmentRequest)).to.be.false;
 
   });
 
