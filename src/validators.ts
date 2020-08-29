@@ -95,7 +95,7 @@ export class Validators {
         // If conditions failed
         else {
 
-          if ( this.__conditions.type === 'ignore' || this.__conditions.type === 'unless' ) return true;
+          if ( this.__conditions.type === 'ignore' ) return true;
           if ( this.__conditions.type === 'exist' ) return value === undefined ? true : result;
           if ( this.__conditions.type === 'strict' ) return result;
 
