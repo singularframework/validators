@@ -172,6 +172,8 @@ export class Validators {
   /** Aesthetic property. */
   public get where() { return this; }
   /** Aesthetic property. */
+  public get while() { return this; }
+  /** Aesthetic property. */
   public get does() { return this; }
   /** Aesthetic property. */
   public get with() { return this; }
