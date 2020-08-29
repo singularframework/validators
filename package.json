@@ -4,7 +4,7 @@
   "description": "Singular framework validators module",
   "main": "dist/validators.js",
   "scripts": {
-    "postinstall": "cd ./node_modules/@singular/core && npm install && npm start",
+    "postinstall": "(cd ./node_modules/@singular/core && npm install && npm start) || echo \"Post install failed!\"",
     "start": "./node_modules/typescript/bin/tsc --build",
     "docs": "./node_modules/typedoc/bin/typedoc --out docs src",
     "test": "./node_modules/typescript/bin/tsc -p test/tsconfig.json && ./node_modules/mocha/bin/mocha ./test/dist/main.spec.js"
