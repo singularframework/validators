@@ -4,10 +4,8 @@ This package contains validators for Singular framework, installed from `npm ins
 
 # Setup
 
-  1. Clone [repo](https://github.com/singularframework/core) from the appropriate branch
-  2. Inside repo run `npm start` and then `sudo npm link` to create a global symlink
-  3. Install dependencies inside `@singular/validators` repo: `npm install`
-  4. Whenever a dependency is installed, the symlink needs to be recreated: `npm link @singular/core`
+  1. Clone this repo
+  2. Run `npm install` to install all dependencies
 
 # NPM Scripts
 

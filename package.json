@@ -4,7 +4,7 @@
   "description": "Singular framework validators module",
   "main": "dist/validators.js",
   "scripts": {
-    "postinstall": "npm link @singular/core",
+    "postinstall": "cd ./node_modules/@singular/core && npm install && npm start",
     "start": "./node_modules/typescript/bin/tsc --build",
     "docs": "./node_modules/typedoc/bin/typedoc --out docs src",
     "test": "./node_modules/typescript/bin/tsc -p test/tsconfig.json && ./node_modules/mocha/bin/mocha ./test/dist/main.spec.js"
@@ -42,6 +42,7 @@
     "typescript": "^4.0.2"
   },
   "dependencies": {
+    "@singular/core": "github:singularframework/core#1.x-alpha",
     "luxon": "^1.25.0",
     "source-map-support": "^0.5.19"
   }
