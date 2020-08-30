@@ -42,7 +42,7 @@
     "typescript": "^4.0.2"
   },
   "dependencies": {
-    "@singular/common": "github:singularframework/common#v1.0.0-alpha.1",
+    "@singular/common": "github:singularframework/common#v1.0.0-alpha.2",
     "luxon": "^1.25.0",
     "source-map-support": "^0.5.19"
   }
