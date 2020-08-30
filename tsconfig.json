@@ -11,8 +11,8 @@
     "moduleResolution": "node",
     "target": "es2018",
     "declaration": true,
-    "sourceRoot": "src",
-    "outDir": "dist",
+    "sourceRoot": ".",
+    "outDir": ".",
     "typeRoots": [
       "node_modules/@types"
     ],
@@ -21,8 +21,6 @@
     ]
   },
   "exclude": [
-    "dist",
-    "docs",
     "node_modules",
     "test"
   ]

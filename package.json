@@ -2,7 +2,7 @@
   "name": "@singular/validators",
   "version": "1.0.0-alpha.4",
   "description": "Singular framework validators module",
-  "main": "dist/validators.js",
+  "main": "validators.js",
   "scripts": {
     "postinstall": "(cd ./node_modules/@singular/common && npm install && npm start) || echo \"Post install failed!\"",
     "start": "./node_modules/typescript/bin/tsc --build",
