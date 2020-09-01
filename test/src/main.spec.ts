@@ -726,6 +726,32 @@ describe('Validators', function() {
     expect(await validator(null)).to.be.false;
     expect(await validator(body.books)).to.be.true;
 
+    // Checking local refs
+
+    validator = should.have.children({
+      title: that.exists.onlyIf($('tags').includes('person'))
+    }).__exec();
+
+    expect(await validator(body.books, body)).to.be.true;
+
+    validator = should.have.children({
+      title: that.exists.onlyIf($('tags').includes('person'))
+    }, true).__exec();
+
+    expect(await validator(body.books, body)).to.be.false;
+
+    validator = should.have.children({
+      last: that.equals('Bush').onlyIf($('first').equals('Mahatma'))
+    }, true).__exec();
+
+    expect(await validator(body.author, body)).to.be.true;
+
+    validator = should.have.children({
+      last: that.equals('Bush').onlyIf($('first').equals('Mahatma'))
+    }).__exec();
+
+    expect(await validator(body.author, body)).to.be.false;
+
   });
 
   it('should validate using "either" correctly', async function() {
