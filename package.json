@@ -1,6 +1,6 @@
 {
   "name": "@singular/validators",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-alpha.7",
   "description": "Singular framework validators module",
   "main": "validators.js",
   "scripts": {
