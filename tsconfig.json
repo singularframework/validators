@@ -11,18 +11,20 @@
     "moduleResolution": "node",
     "target": "es2018",
     "declaration": true,
-    "sourceRoot": ".",
-    "outDir": ".",
+    "sourceRoot": "src",
+    "outDir": "dist",
     "typeRoots": [
       "node_modules/@types"
     ],
     "lib": [
       "es2018"
-    ],
-    "composite": true
+    ]
   },
   "exclude": [
+    "dist",
+    "docs",
     "node_modules",
-    "test"
+    "test",
+    "legacy"
   ]
 }

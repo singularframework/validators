@@ -1,5 +1,5 @@
 import 'source-map-support/register';
-import { should, could, that, is, does, $, are, be, there, these } from '../..';
+import { should, could, that, is, does, $, are, be, there, these } from '../../dist/validators';
 import { expect } from 'chai';
 import { ValidationDefinition, AsyncValidatorFunction } from '@singular/common';
 
