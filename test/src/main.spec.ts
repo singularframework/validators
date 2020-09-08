@@ -543,6 +543,16 @@ describe('Validators', function() {
     expect(await validator('null')).to.be.false;
     expect(await validator([null, 0, 1, 'a', 'string'])).to.be.true;
 
+    validator = should.includeAny('a', 1, null).__exec();
+
+    expect(await validator(undefined)).to.be.false;
+    expect(await validator(null)).to.be.false;
+    expect(await validator('null')).to.be.true;
+    expect(await validator(1)).to.be.false;
+    expect(await validator([null, 0, 1, 'a', 'string'])).to.be.true;
+    expect(await validator('abnormal')).to.be.true;
+    expect(await validator([0, 1, 2])).to.be.true;
+
     validator = should.be.in([1,2,3,'s']).__exec();
 
     expect(await validator(undefined)).to.be.false;

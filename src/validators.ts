@@ -202,6 +202,8 @@ export class Validators {
   public includesRef(ref: string) { return this.includeRef(ref); }
   /** Checks if value includes all targets (using value.includes). */
   public includesAll(...targets: any[]) { return this.includeAll(...targets); }
+  /** Checks if value includes any of the given targets (using value.includes). */
+  public includesAny(...targets: any[]) { return this.includeAny(...targets); }
   /** Runs the validators on value if all passed-in conditions pass the validation, otherwise ignores validation and returns true. */
   public if(
     condition: ValidatorFunction|AsyncValidatorFunction|Validators,
@@ -520,6 +522,8 @@ export class Validators {
   public includeRef(ref: string) { return this.__addValidator(validators.includeRef(ref)); }
   /** Checks if value includes all targets (using value.includes). */
   public includeAll(...targets: any[]) { return this.__addValidator(validators.includeAll(...targets)); }
+  /** Checks if value includes any of the given targets (using value.includes). */
+  public includeAny(...targets: any[]) { return this.__addValidator(validators.includeAny(...targets)); }
   /** Checks if value is included in target (using target.includes). */
   public in(target: string|any[]) { return this.__addValidator(validators.in(target)); }
   /** Checks if value is included in target resolved from reference (using target.includes). */

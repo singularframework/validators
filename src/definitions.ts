@@ -85,6 +85,19 @@ const validators = {
     return true;
 
   }),
+  includeAny: (...targets: any[]) => <ValidatorFunction>(value => {
+
+    if ( typeof value !== 'string' && (! value || typeof value !== 'object' || value.constructor !== Array) ) return false;
+
+    for ( const target of targets ) {
+
+      if ( value.includes(target) ) return true;
+
+    }
+
+    return false;
+
+  }),
   in: (target: any[]|string) => <ValidatorFunction>(value => target.includes(value)),
   inRef: (ref: string) => <ValidatorFunction>((value, rawValues) => {
 
