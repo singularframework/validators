@@ -12,6 +12,10 @@
     "type": "git",
     "url": "git+ssh://git@github.com/singularframework/validators.git"
   },
+  "files": [
+    "dist",
+    "legacy"
+  ],
   "keywords": [
     "singular",
     "backend",
